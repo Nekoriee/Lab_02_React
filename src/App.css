@@ -36,3 +36,31 @@
     transform: rotate(360deg);
   }
 }
+
+.active {
+	color: blue;
+	font-size: 20px;
+}
+
+span:hover {
+	color: red;
+	cursor: pointer;
+}
+
+table {
+	margin: 20px 5px;
+	border-collapse:collapse;
+}
+
+table td, table th {
+	padding: 5px 10px;
+	border: thin solid grey;
+}
+
+table tr:nth-child(odd){
+	background: LightGrey;
+}
+
+.hide {
+	display: none;
+}
