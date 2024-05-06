@@ -64,3 +64,12 @@ table tr:nth-child(odd){
 .hide {
 	display: none;
 }
+
+svg path, line {
+	fill: none;
+	stroke: black;
+	width: 1px;
+}
+svg text {
+	font: 8px Verdana;
+}

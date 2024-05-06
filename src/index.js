@@ -1,325 +1,185 @@
-/*
 import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
-
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
-*/
-
-import React from 'react';
+import { useEffect, useMemo, useRef, useState } from "react";	
 import ReactDOM from 'react-dom/client';
 import './App.css';
 import chocolate from './data.js'
+import * as d3 from "d3";
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
-/*
-function InfoNumber(props) {
-	const leng = (item) => item.toString().length;
-	const isSquare = (item) => item.number % 2 == 0 ? "чётное": "нечётное";
-	const getSquare = (item) => Math.pow(item.number, 2);
+const createArrGraph =(data, minChart, maxChart)=>{
 	
-	return (
-	<div>
-		<p>Число <b>{props.number}</b></p>
+	let dataInterval = data.filter(function (d) {
+		return (+d.review_date >= +minChart && +d.review_date <= +maxChart );
+	})
+	
+	// заполнение массива точек для построения
+	let arrGraph = []
+	let groupObj = d3.group(dataInterval, d => d.review_date)
+	for(let item of groupObj) {
+		let minMax = d3.extent(item[1].map(d => d.cocoa_percent))
+		arrGraph.push({labelX : item[0], values : minMax});
+	}
+	arrGraph.sort((a, b) => d3.ascending(a.labelX, b.labelX))
+	return arrGraph;
+}
+
+const Chart = (props) =>{
+	
+	const axesRef = useRef(null);
+	
+	// ширина и высота области для вывода графиков
+	const boundsWidth = props.width - props.margin.left - props.margin.right;
+	const boundsHeight = props.height - props.margin.top - props.margin.bottom;
+	
+	// формируем шкалы для осей
+	const scaleX = useMemo(() => {
+		return d3
+			.scaleLinear()
+			.domain(d3.extent(props.data.map(d => d.labelX)))
+			.range([0,boundsWidth]);
+	}, [props.data, boundsWidth]);
+
+	const scaleY = useMemo(() => {
+		return d3
+			.scaleLinear()
+			.domain([0, 110])
+			.range([boundsHeight, 0]);
+	}, [boundsHeight]);
+	
+	// создаем область с осями и графиком с помощью d3
+	useEffect(() => {
 		
-		<ul>
-		<li>количество символов - {leng(props.number)}</li>
-		<li>число {isSquare(props.number)}</li>
-		<li>полный квадрат числа {getSquare(props.number)}.</li>
-		</ul>
-	</div>
-	)
-}
-const number = "225"
-const element = <InfoNumber number={number} />;
-*/
-/*
-function Temp(props) {
-	const convert = (item) => item.type == "k" ? item.value - 273.15 : (item.value - 32) * 5/9 
-	function press(item) {
-		console.log("CLICK")
-		alert(item.value + "°" + item.type.toUpperCase() + "= " + convert(item) + "°C")
-	}
-	return <button onClick={()=> press(props)}>{props.value + "°" + props.type.toUpperCase()}</button>;
-}
+		const svgElement = d3.select(axesRef.current);
+		svgElement.selectAll("*").remove();
+		
+		// рисуем оси
+		let ticksX = []
+		props.data.forEach((item, index) => {
+			ticksX.push(item.labelX)
+		});
+		const xAxis = d3.axisBottom(scaleX);
+		xAxis.tickFormat(d3.format(".0f"));
+		xAxis.tickValues(ticksX)
+		
+		svgElement
+			.append("g")
+			.attr("transform", `translate(${props.margin.left}, ${props.height -
+		props.margin.bottom})`)
+			.call(xAxis)
+			.selectAll("text")
+			.style("text-anchor", "end")
+			.attr("dx", "-.8em")
+			.attr("dy", ".15em")
+			.attr("transform", d => "rotate(-30)");
+			
+		const yAxis = d3.axisLeft(scaleY);
+		
+		svgElement
+			.append("g")
+			.attr("transform", `translate(${props.margin.left},
+		${props.margin.top})`)
+			.call(yAxis);
+			
+		//рисуем график
+		const color = ["blue", "red"]
+		const item = props.oy;
 
-function GetTemp(props) {
-	return (
-	<div>
-		<p>Температура в Кельвинах - <Temp type="k" value={tempK} /></p>
-		<p>Температура в Фаренгейтах - <Temp type="f" value={tempF} /></p>
-	</div>
-	)
-}
-
-const tempK = "225"
-const tempF = "-22"
-const element = <GetTemp valueK={tempK} valueF={tempF} />;
-*/
-
-/*
-const gloss= [
-	{"Переменная" :
-	"Это идентификатор, используемый для хранения значений в памяти компьютера. Программист может присваивать и изменять значения переменных.",
-	},
-	{"Функция" : 
-	"Это блок кода, который выполняет определенную операцию. Функции могут быть вызваны и использованы в различных частях программы."
-	},
-	{"Условное выражение" :
-	"Это конструкция, которую используют программисты для выполнения разных операций, в зависимости от условий. Примером может быть оператор if-else."
-	},
-	{"Цикл" :
-	"Это конструкция, позволяющая программе выполнять определенный блок кода многократно. Циклы могут быть контролируемыми или бесконечными, в зависимости от задачи."
-	},
-	{"Массив" :
-	"Это структура данных, позволяющая хранить множество элементов одного типа. Элементы массива могут быть обращены по индексу."
-	},
-	{"Класс" :
-	"Это шаблон или описание для создания объектов. Класс определяет свойства и методы, которые могут быть использованы объектами этого класса."
-	},
-	{"Объект" :
-	"Это экземпляр класса, который имеет свои собственные значения свойств и может вызывать методы, определенные в классе."
-	},
-	{"Интерфейс" :
-	"Это контракт, определяющий набор методов, которые класс должен реализовать. Интерфейсы позволяют определить стандартизацию взаимодействия."
-	},
-	{"Рекурсия" :
-	"Это процесс, когда функция вызывает саму себя. Рекурсия может быть полезна для решения задач, которые могут быть разделены на более простые подзадачи."
-	},
-	{"Стек" :
-	"Это структура данных, работающая по принципу “последний пришел, первый ушел” (Last-In-First-Out, LIFO). Элементы добавляются и удаляются только с одного конца стека."
-	},
-	{"Очередь" :
-	"Это структура данных, работающая по принципу “первый пришел, первый ушел” (First-In-First-Out, FIFO). Элементы добавляются в конец очереди, а извлекаются из начала."
-	},
-	{"Рекурсивный алгоритм" :
-	"Это алгоритм, который использует рекурсию для решения задачи. Например, алгоритмы обхода деревьев часто используют рекурсивные вызовы."
-	},
-	{"SQL" :
-	"Это язык программирования, используемый для управления и манипулирования реляционными базами данных."
-	},
-	{"API" :
-	"Это интерфейс, предоставляемый программным обеспечением для взаимодействия с другими программами или компонентами."
-	},
-	{"GIT" :
-	"Это распределенная система контроля версий, используемая для отслеживания изменений в кодовой базе и управления совместной разработкой."
-	},
-	{"IDE" :
-	"Это программное обеспечение, которое облегчает разработку, отладку и тестирование программ."
-	},
-	{"Отладка" :
-	"Это процесс исследования и исправления ошибок в программном коде. Отладка может включать использование специальных инструментов для поиска и исправления ошибок."
-	},
-	{"Алгоритм" :
-	"Это последовательность шагов, выполняемых для решения задачи или выполнения определенной операции. Алгоритмы используются для решения различных задач программирования."
-	},
-	{"Исключение" :
-	"Это объект, который представляет ошибку или необычную ситуацию, возникающую во время выполнения программы. Исключения позволяют программе обрабатывать ошибки и делать ее более надежной."
-	},
-	{"База данных" :
-	"Это организованное хранилище данных, где информация сохраняется и управляется. Базы данных используются для эффективного хранения и извлечения информации."
-	},
-	{"Индекс" :
-	"Это структура данных, которая упорядочивает значения в базе данных, чтобы ускорить поиск и извлечение данных."
-	},
-	{"Асинхронное программирование" :
-	"Это подход к написанию программ, где задачи выполняются параллельно и независимо друг от друга. Асинхронное программирование позволяет создавать отзывчивые и эффективные приложения."
-	},
-	{"Поток" :
-	"Это отдельный путь выполнения внутри программы. Потоки позволяют параллельно выполнять несколько задач и улучшить общую производительность приложения."
-	},
-	{"Распределенные системы" :
-	"Это системы, в которых компьютерные ресурсы и задачи распределены по нескольким компьютерам или узлам сети. Распределенные системы позволяют повысить масштабируемость и отказоустойчивость приложений."
-	},
-	{"REST" :
-	"Это архитектурный стиль разработки веб-сервисов, который использует стандартные протоколы HTTP для обмена данными между клиентом и сервером."
-	},
-	{"MVC" :
-	"Это паттерн архитектуры программного обеспечения, который разделяет приложение на три основных компонента: модель, представление и контроллер. MVC позволяет улучшить структуру кода и упростить разработку приложений."
-	},
-	{"Хэширование" :
-	"Это процесс преобразования данных фиксированной длины в хэш-значение фиксированного размера. Хэширование используется для уникальной идентификации данных и быстрого поиска."
-	},
-	{"Битовые операции" :
-	"Это операции, которые выполняются над индивидуальными битами чисел. Битовые операции полезны для манипуляции с флагами и битовыми полями."
-	},
-	{"Рефакторинг" :
-	"Это процесс изменения структуры и организации кода, чтобы сделать его более понятным, поддерживаемым и эффективным, тем не менее, без изменения его функциональности."
-	},
-	{"Управление памятью" :
-	"Это процесс управления выделением и освобождением памяти во время выполнения программы. Управление памятью важно для эффективного использования ресурсов и предотвращения утечек памяти."
-	},
-	{"Десериализация" :
-	"Это процесс преобразования сериализованных данных в исходный формат. Десериализация используется для восстановления объектов из данных, сохраненных или переданных по сети."
-	},
-	{"Регулярные выражения" :
-	"Это последовательности символов, которые задают шаблон для поиска и сопоставления текста. Регулярные выражения широко используются для обработки и анализа строковых данных."
-	},
-	{"Сортировка" :
-	"Это процесс упорядочивания элементов в заданном порядке. Существует множество алгоритмов сортировки, таких как сортировка пузырьком, сортировка вставками и быстрая сортировка."
-	},
-	{"Шаблон проектирования" :
-	"Это повторяемое решение для общей проблемы в разработке программного обеспечения. Шаблоны проектирования помогают создавать гибкий, расширяемый и удобочитаемый код."
-	},
-	{"NoSQL" :
-	"Это подход к хранению и обработке данных, который не использует традиционные реляционные базы данных. Базы данных NoSQL обладают гибкой схемой данных и масштабируемостью для работы с большими объемами информации."
-	},
-	{"ООП" :
-	"Это методология программирования, в которой программы структурированы вокруг объектов, которые представляют реальные или абстрактные сущности. ООП позволяет создавать модульный, переиспользуемый и расширяемый код."
-	},
-	{"JSON" :
-	"Это формат обмена данными, основанный на синтаксисе JavaScript. JSON часто используется для передачи данных между клиентской и серверной сторонами приложений."
-	},
-	{"Компиляция" :
-	"Это процесс преобразования исходного кода программы в машинный код, который может быть выполнен компьютером. Компиляция обычно производится перед запуском программы."
-	},
-	{"Виртуализация" :
-	"Это технология, которая позволяет работать нескольким операционным системам или приложениям на одном компьютере или сервере. Виртуализация повышает эффективность использования ресурсов и упрощает управление системами."
-	},
-	{"Криптография" :
-	"Это область науки, которая занимается защитой информации путем шифрования и дешифрования данных. Криптография используется, например, для обеспечения безопасности в сети или защиты данных."
-	},
-	{"Эмуляция" :
-	"Это процесс создания программного или аппаратного средства, которое имитирует поведение другого устройства или программы. Эмуляция позволяет запускать программы или игры на различных платформах."
-	},
-	{"CDN" :
-	"Это сеть серверов, расположенных в разных местах мира, для ускорения доставки контента пользователю. CDN позволяет уменьшить задержку и повысить производительность при работе с веб-сайтами или приложениями."
-	},
-	{"Deadlock" :
-	"Это ситуация, когда два или более потоков программы блокируют друг друга и не могут продолжить выполнение. Deadlock может привести к зависанию и некорректной работе программы."
-	},
-	{"Модульное тестирование" :
-	"Это процесс проверки отдельных модулей или функций в программе для обеспечения корректности их работы. Модульные тесты являются важной частью процесса разработки ПО."
-	},
-	{"Нотация большого O" :
-	"Это способ оценки производительности алгоритмов в терминах времени выполнения и использования ресурсов. Нотация большого O помогает программистам анализировать и сравнивать эффективность алгоритмов."
-	},
-	{"Многопоточность" :
-	"Это возможность программы выполнять несколько потоков параллельно. Многопоточность улучшает производительность, позволяя выполнить параллельные задачи."
-	},
-	{"SIMD" :
-	"Это техника параллельной обработки данных, которая позволяет одновременно выполнять одну инструкцию над несколькими элементами данных. SIMD используется для ускорения выполнения вычислений, таких как обработка изображений и аудио."
-	},
-	{"ORM" :
-	"Это техника программирования, которая обеспечивает автоматическое сопоставление и взаимодействие между объектно-ориентированным кодом и реляционной базой данных."
-	},
-	{"Инкапсуляция" :
-	"Это принцип объектно-ориентированного программирования, который объединяет данные и методы, работающие с этими данными, внутри класса. Инкапсуляция обеспечивает контролируемый доступ и скрытие данных."
-	}
-]
-*/
-
-/*
-class CreateRange extends React.Component {
-	state = {
-		str: '',
-		number: +this.props.number,
-		step: +this.props.step
-	};
+		// создание path
+		let lineXY = d3.line()
+			.x(d => scaleX(d[0]))
+			.y(d => scaleY(d[1] + 16.5));
+			
+		svgElement
+			.append("path") // добавляем путь
+			.attr("id", "graph")
+			.attr("transform", `translate(${props.margin.left}, ${props.margin.bottom})`)
+			.style("stroke-width", "3")
+			.style("stroke", color[item]);
+			
+		let pathArr = []
+		for(let dataPoint of props.data) {
+			let arrContents = [dataPoint.labelX, dataPoint.values[props.oy]]
+			pathArr.push(arrContents)
+		} 
+			
+		// отрисовка chart
+		const path = svgElement
+			.select("path#graph")
+			.datum(pathArr)
+			.attr("d", lineXY);
 	
-	incNumber = () => {
-		this.setState(({ number }) => ({number: number + this.state.step }));
-		this.setState(({ str }) => ({str: str + ' ' + this.state.number }));
-	};
-	render() {
-		return (
-		<div>
-			<p>
-			{this.state.str + ' ' + this.state.number.toString() + ' '}
-			<span onClick={this.incNumber}>...</span>
-			</p>
-		</div>
-	);
-}
-}
-
-const element = <CreateRange number='10' step='3' />
-*/
-
-/*
-function Glossary(props) {
+		const pathLength = path.node().getTotalLength();
 	
-	const listDl = props.list.map((term, index) =>
-		<dt key={index.toString()}>
-			{index.toString()}
-		</dt>
-		<dd>
-			{index.toString()}
-		</dd>
-	);
+		path
+			.attr("stroke-dashoffset", pathLength)
+			.attr("stroke-dasharray", pathLength)
+			.transition()
+			.ease(d3.easeLinear)
+			.duration(1000)
+			.attr("stroke-dashoffset", 0);
+	}, [scaleX, scaleY, props.data, props.margin, props.height, props.oy]);
 	
-
-	return {
-		<>
-			<dl>
-			{listDl}
-			</dl>
-		</>
-	}
-}
-*/
-
-/*
-function GlossaryHead(props) {
-	const handleClick = (event) => {
-		props.updateActivePage(event.target.innerHTML.trim());
-	}
-	let headArr = props.list.map((item) =>
-		Object.keys(item)[0][0].toUpperCase());
-	headArr = [... new Set(headArr)].sort();
-	const head = headArr.map ((item, index) => <span key={index + '_h'} onClick={handleClick}
-		className={item === props.activePage ? "active": ""}> {item} </span>);
 	return (
 		<div>
-			{head}
+			<svg width={props.width} height={props.height}>
+				<g ref={axesRef} />
+			</svg>
 		</div>
-	);	
-}
-
-function Glossary(props) {
-	
-	const [activePage, setActivePage] = React.useState("И");
-	const updateActivePage = (value) => setActivePage(value);
-	
-	let arr = props.list.filter(item => Object.keys(item)[0][0].toUpperCase() === activePage);
-	
-	const sortArr =(a, b)=> Object.keys(a)[0] > Object.keys(b)[0] ? 1 : -1;
-	arr = arr.sort(sortArr);
-	
-	const listDl = arr.map((item, index) =>
-		<>
-		<dt key={index + '_k'}>
-			{Object.keys(item)}
-		</dt>
-		<dd key={index + '_v'}>
-			{Object.values(item)}
-		</dd>
-		</>
-	);
-	
-	return (
-	<>
-		<GlossaryHead list={props.list}
-			updateActivePage={updateActivePage} activePage={activePage}/>
-		<dl>
-			{listDl}
-		</dl>
-	</>
 	)
 }
-*/
+
+const SettingAndGraph =(props)=>{
+	const margin = {top:10, bottom:60, left:40,right:10}
+	const [arrGraph, createArr] = React.useState(createArrGraph(props.data, 2006, 2021));
+	//при изменении значений по оси OX получаем данные для нового графика
+	const [oxMin, setOxMin] = useState(2006);
+	const [oxMax, setOxMax] = useState(2021);
+	const [oy, setOy] = useState(0);
+	const updateGraph = () => {
+		createArr(createArrGraph(props.data, oxMin, oxMax));
+	}
+	const onChangeOxMin = (event) => {
+		setOxMin(event.target.value);
+		createArr(createArrGraph(props.data, event.target.value, oxMax));
+	}
+	const onChangeOxMax = (event) => {
+		setOxMax(event.target.value);
+		createArr(createArrGraph(props.data, oxMin, event.target.value));
+	}
+	const onChangeOy = (event) => {
+		setOy(event.target.value);
+		updateGraph();
+	}
+	return (
+		<div>
+			<form>
+				<div>
+					<p><b>Значение по оси OX:</b></p>
+					<div>
+						<label>review_date:</label><br/>
+						<label for="ox_min" >From:</label>
+						<input onChange={onChangeOxMin} id="ox_min" type="number" value={oxMin} min="2006" max="2021"/>
+						<br/>
+						<label for="ox_max" >To:</label>
+						<input onChange={onChangeOxMax} id="ox_max" type="number" value={oxMax} min="2006" max="2021"/>
+					</div>
+				</div>
+				<div>
+					<p><b>Значение по оси OY:</b></p>
+					<div onChange={onChangeOy}>
+						<input id="oy_min" type="radio" name="oy" value="0" defaultChecked={ oy === 0 } />
+						<label for="oy_min">Минимальный процент какао</label><br/>
+						<input id="oy_max" type="radio" name="oy" value="1" defaultChecked={ oy === 1 } />
+						<label for="oy_max">Максимальный процент какао</label>
+					</div>
+				</div>
+			</form>
+			<Chart width="800" height="400" margin={margin} data={arrGraph} oy={oy}/>
+		</div>
+	)
+};
+
 
 const Input = (props) => {
 	const [value, setValue] = React.useState('');
@@ -424,9 +284,7 @@ const Input = (props) => {
 		else {
 			cloneSort[props.head]["type"] = 'asc';
 			setSortType('asc');
-		}
-			
-			
+		}			
 		
 		// передаем родительскому компоненту новое состояние полей фильтрации
 		props.updateSort(cloneSort);
@@ -449,9 +307,6 @@ const Input = (props) => {
 	}
 	
 	const getSelected = (sField) => {
-		//console.log("SELECTED_TRY: " + sField)
-		//console.log("SELECTED_ACTUAL: " + getValue())
-		//console.log(sField == getValue());
 		if (sField == getValue()) return true
 		return false
 	}
@@ -697,6 +552,8 @@ function Content() {
 	return(
 		<>
 		<Table data={chocolate} amountRows="15" />
+		<br/>
+		<SettingAndGraph data={chocolate}/>
 		</>
 	)
 }
